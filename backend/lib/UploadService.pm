@@ -2,7 +2,7 @@ package UploadService;
 use Mojo::Base 'Mojolicious';
 use Mojo::Asset::File;
 use Data::Dumper;
-use Mojo::Util qw(hmac_sha1_sum b64_encode);
+use Mojo::Util qw(hmac_sha1_sum b64_encode slurp);
 use POSIX qw(strftime);
 # enable receiving uploads up to 1GB
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 1_073_741_824;
@@ -22,7 +22,7 @@ sub startup {
         $self->req->url->base(Mojo::URL->new($uri)) if $uri;
     });
     # session is valid for 1 day
-    $self->secret('a093l;afslihj;akj;ljasdf.,mdfffdf');
+    $self->secret(slurp($ENV{US_SECRET_FILE})) if -r $ENV{US_SECRET_FILE};
     $self->sessions->cookie_name('uploader');
     $self->sessions->default_expiration(1*24*3600);
 
