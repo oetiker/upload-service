@@ -42,6 +42,9 @@ sub startup {
         my $username = $1;
         my $root_dir = $ENV{US_ROOT} || '/tmp';
         my $root = $root_dir . '/'. $username . '/INBOX';
+
+        $ENV{MOJO_TMPDIR} = $root;
+
         $self->stash(root=>$root);
 
         my $uid = getpwnam($username);

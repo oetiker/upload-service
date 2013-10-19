@@ -9,6 +9,8 @@ use lib "$FindBin::Bin/../lib";
 use Mojolicious::Commands;
 use UploadService;
 
+$ENV{MOJO_MAX_MEMORY_SIZE} = 1024*1024*128;
+
 our $VERSION = "0";
 
 # Start commands
