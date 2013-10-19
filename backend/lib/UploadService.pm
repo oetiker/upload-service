@@ -51,8 +51,9 @@ sub startup {
            return;
         }
         # lets see if  we can do a bit of user switching
-        if ($< != $uid ){
+        if ($< == 0 and $> != $uid ){
             # switch uid
+            $> = 0;
             $> = $uid;
             if ($> != $uid){
                 $self->res->code(403);
