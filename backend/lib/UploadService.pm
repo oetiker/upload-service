@@ -41,7 +41,7 @@ sub startup {
         }
         my $username = $1;
         my $root_dir = $ENV{US_ROOT} || '/tmp';
-        my $root = $me->root_dir . '/'. $username . '/INBOX';
+        my $root = $root_dir . '/'. $username . '/INBOX';
         $self->stash(root=>$root);
 
         my $uid = getpwnam($username);
