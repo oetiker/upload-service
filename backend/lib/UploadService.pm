@@ -1,4 +1,4 @@
-package JfuPerl;
+package UploadService;
 use Mojo::Base 'Mojolicious';
 use Mojo::Asset::File;
 use Data::Dumper;
@@ -40,7 +40,7 @@ sub startup {
            return;
         }
         my $username = $1;
-        my $root_dir = $ENV{JFU_ROOT} || '/tmp';
+        my $root_dir = $ENV{US_ROOT} || '/tmp';
         my $root = $me->root_dir . '/'. $username . '/INBOX';
         $self->stash(root=>$root);
 
