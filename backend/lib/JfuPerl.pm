@@ -7,8 +7,6 @@ use POSIX qw(strftime);
 # enable receiving uploads up to 1GB
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 1_073_741_824;
 
-has root_dir => '/tmp/sandbox/';
-
 sub startup {
     my $self = shift;
     my $me = $self;
@@ -33,12 +31,20 @@ sub startup {
     # / (upload page)
     $r->get('/' => 'home');
 
+    # some intial checks
     my $a = $r->under('/:user' => sub {
-        my $self = shift;    
-        my $root = $me->root_dir . '/'. $self->param('user') . '/INBOX';
+        my $self = shift;
+        if (not $self->param('user') =~ /^(\w+)$/){
+           $self->res->code(403);
+           $self->render( text => 'invalid user');
+           return;
+        }
+        my $username = $1;
+        my $root_dir = $ENV{JFU_ROOT} || '/tmp';
+        my $root = $me->root_dir . '/'. $username . '/INBOX';
         $self->stash(root=>$root);
 
-        my $uid = getpwnam($self->param('user'));
+        my $uid = getpwnam($username);
         if (not $uid){
            $self->res->code(403);
            $self->render( text => 'unknown user');
@@ -66,6 +72,12 @@ sub startup {
             my $newKey =hmac_sha1_sum(rand,time);
             $self->session(skey => $newKey);
         }
+        if (not $self->session('skey') =~ /^(\w+)$/){
+            $self->res->code(403);
+            $self->render( text => 'invalid session key');
+            return;
+        }
+        $self->stash(skey => $1);
         $self->render_later;
     });
 
@@ -84,8 +96,8 @@ sub startup {
     # GET /upload (retrieves stored file list)
     $a->get('/upload' => sub {
         my $self = shift;
-        my $sessionkey = $self->session('skey');
         my $root = $self->stash('root');
+        my $sessionkey = $self->stash('skey');
         my @list;
         for my $link (glob $root.'/.'.$sessionkey.'*'){
             next unless -l $link;
@@ -110,7 +122,7 @@ sub startup {
         my @uploads = $self->req->upload('files[]');
 
         my @files;
-        my $sessionkey = $self->session('skey');
+        my $sessionkey = $self->stash('skey');
         my $root = $self->stash('root');
         for my $upload (@uploads) {
             my $filename = $upload->filename;
@@ -133,9 +145,14 @@ sub startup {
 
     # /download/files/foo.txt
     $a->get('/download/#key' => sub {
-        my $self = shift;        
-        my $key  = $self->param('key');
-        my $sessionkey = $self->session('skey');
+        my $self = shift;
+        if (not $self->param('key') =~ m{([^/]+)}){
+            $self->res->code(403);
+            $self->render( text => 'bad key');
+            return;
+        }
+        my $key  = $1;
+        my $sessionkey = $self->stash('skey');
         my $root = $self->stash('root');
         if (not -l $root .'/.'.$sessionkey.$key ){
             $self->res->code(403);
@@ -157,8 +174,13 @@ sub startup {
     # /delete/files/bar.tar.gz
     $a->delete('/delete/#key' => sub {
         my $self = shift;
-        my $key  = $self->param('key');
-        my $sessionkey = $self->session('skey');
+        if (not $self->param('key') =~ m{([^/]+)}){
+            $self->res->code(403);
+            $self->render( text => 'bad key');
+            return;
+        }
+        my $key  = $1;
+        my $sessionkey = $self->stash('skey');
         my $root = $self->stash('root');
         if (not -l $root .'/.'.$sessionkey.$key or -l $root ){
             $self->res->code(403);
