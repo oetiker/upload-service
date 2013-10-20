@@ -22,7 +22,7 @@ sub startup {
         $self->req->url->base(Mojo::URL->new($uri)) if $uri;
     });
     # session is valid for 1 day
-    $self->secret(slurp($ENV{US_SECRET_FILE})) if -r $ENV{US_SECRET_FILE};
+    $self->secret(slurp($ENV{US_SECRET_FILE})) if $ENV{US_SECRET_FILE} and -r $ENV{US_SECRET_FILE};
     $self->sessions->cookie_name('uploader');
     $self->sessions->default_expiration(1*24*3600);
 
@@ -112,7 +112,7 @@ sub startup {
             push @list, {
                 name => $dest,
                 size => $file->size,
-                $ENV{US_ENABLE_DOWLOAD} ? ( url => 'download/'.$dest ): (),
+                $ENV{US_ENABLE_DOWNLOAD} ? ( url => 'download/'.$dest ): (),
                 $ENV{US_ENABLE_DELETE} ? (
                     deleteUrl =>  'delete/'.$dest,
                     deleteType => 'DELETE'
@@ -138,7 +138,7 @@ sub startup {
                 push @files, {
                     name => $outfile,
                     size => $upload->size,
-                    $ENV{US_ENABLE_DOWLOAD} ? ( url => 'download/'.$outfile ): (),
+                    $ENV{US_ENABLE_DOWNLOAD} ? ( url => 'download/'.$outfile ): (),
                     $ENV{US_ENABLE_DELETE} ? (
                         deleteUrl =>  'delete/'.$outfile,
                         deleteType => 'DELETE'
