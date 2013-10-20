@@ -112,9 +112,11 @@ sub startup {
             push @list, {
                 name => $dest,
                 size => $file->size,
-                url => 'download/'.$dest,
-                deleteUrl =>  'delete/'.$dest,
-                deleteType => 'DELETE'
+                $ENV{US_ENABLE_DOWLOAD} ? ( url => 'download/'.$dest ): (),
+                $ENV{US_ENABLE_DELETE} ? (
+                    deleteUrl =>  'delete/'.$dest,
+                    deleteType => 'DELETE'
+                ):(),
             };
         }
         return $self->render( json => { files => \@list } );
@@ -136,9 +138,11 @@ sub startup {
                 push @files, {
                     name => $outfile,
                     size => $upload->size,
-                    deleteUrl => 'delete/'.$outfile,
-                    deleteType => 'DELETE',
-                    url => 'download/'.$outfile
+                    $ENV{US_ENABLE_DOWLOAD} ? ( url => 'download/'.$outfile ): (),
+                    $ENV{US_ENABLE_DELETE} ? (
+                        deleteUrl =>  'delete/'.$outfile,
+                        deleteType => 'DELETE'
+                    ):(),
                 };
                 $upload->move_to( $root. '/'.  $outfile ) ;
             }
@@ -147,6 +151,7 @@ sub startup {
         $self->render( json => { files => \@files } );
     });
 
+    if ($ENV{US_ENABLE_DOWLOAD}){
     # /download/files/foo.txt
     $a->get('/download/#key' => sub {
         my $self = shift;
@@ -174,7 +179,8 @@ sub startup {
             format => 'application/octet-stream'
         );
     });
-    
+    }
+    if ($ENV{US_ENABLE_DELETE}){    
     # /delete/files/bar.tar.gz
     $a->delete('/delete/#key' => sub {
         my $self = shift;
@@ -201,6 +207,7 @@ sub startup {
         unlink $root .'/.'.$sessionkey.$key;
         $self->render( json => 1 );
     });
+    }
 
 }
 
