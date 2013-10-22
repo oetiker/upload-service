@@ -103,11 +103,14 @@ sub startup {
         my $root = $self->stash('root');
         my $sessionkey = $self->stash('skey');
         my @list;
-        for my $link (glob $root.'/.'.$sessionkey.'*'){
-            next unless -l $link;
+        for my $link (glob $root.'/.*-*-*_*'){
+            next if not -l $link;
             my $dest = readlink $link;
-            my $file = Mojo::Asset::File->new(path=>$root.'/'.$dest);
-                        
+            if (not -f $root.'/'.$dest){
+                unlink $link;
+            };
+            next if not $link =~ /^\.$sessionkey/;
+            my $file = Mojo::Asset::File->new(path=>$root.'/'.$dest);                        
             next unless $file->is_file;
             push @list, {
                 name => $dest,
@@ -134,7 +137,7 @@ sub startup {
             my $filename = $upload->filename;
             my $outfile = strftime("%Y-%m-%d_%H%M%S-$filename",localtime(time));
             $outfile =~ s{/}{_}g;
-            if (symlink $outfile, $root. '/.'. $sessionkey . $outfile and  not -e $root. '/'.  $outfile ){
+            if (symlink $outfile, $root. '/.'. $sessionkey .'-'. $outfile and  not -e $root. '/'.  $outfile ){
                 push @files, {
                     name => $outfile,
                     size => $upload->size,
