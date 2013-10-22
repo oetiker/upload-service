@@ -110,7 +110,7 @@ sub startup {
                 unlink $link;
                 next;
             };
-            next if $link !~ /^\.${sessionkey}/;
+            next if $link !~ m[^${root}/\.${sessionkey}];
             my $file = Mojo::Asset::File->new(path=>$root.'/'.$dest);                        
             next unless $file->is_file;
             push @list, {
