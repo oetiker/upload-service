@@ -132,7 +132,7 @@ sub startup {
         my $root = $self->stash('root');
         for my $upload (@uploads) {
             my $filename = $upload->filename;
-            my $outfile = strftime("%Y-%m-%d_%H:%M:%S-$filename",localtime(time));
+            my $outfile = strftime("%Y-%m-%d_%H%M%S-$filename",localtime(time));
             $outfile =~ s{/}{_}g;
             if (symlink $outfile, $root. '/.'. $sessionkey . $outfile and  not -e $root. '/'.  $outfile ){
                 push @files, {
