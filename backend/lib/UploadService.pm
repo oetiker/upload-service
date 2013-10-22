@@ -108,8 +108,9 @@ sub startup {
             my $dest = readlink $link;
             if (not -f $root.'/'.$dest){
                 unlink $link;
+                next;
             };
-            next if not $link =~ /^\.$sessionkey/;
+            next if $link !~ /^\.${sessionkey}/;
             my $file = Mojo::Asset::File->new(path=>$root.'/'.$dest);                        
             next unless $file->is_file;
             push @list, {
