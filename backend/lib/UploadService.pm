@@ -165,13 +165,14 @@ sub startup {
                     $upload->move_to( $root. '/'.  $outfile ) ; 
                 };
                 if ($@){
-                    unlink $root. '/.'. $sessionkey .'-'. $outfile;
+                    $self->log->debug($@);
                     my $msg = $@;
                     $msg =~ s{\sat\s\S+\sline\s\d+.+}{};
                     push @files, {
                         name => $filename,
                         error => $msg
-                    }
+                    };
+                    unlink $root. '/.'. $sessionkey .'-'. $outfile;
                 } 
                 else {
                     push @files, {
@@ -184,6 +185,12 @@ sub startup {
                         ):(),
                     };
                 }    
+            } 
+            else {
+                push @files, {
+                    name => $filename,
+                    error => "$!",
+                };
             }
         }
         # return JSON list of uploads
