@@ -1,34 +1,45 @@
 upload-service
 ==============
 
-A mojolicious based webservice provinding an
-inbox.company.com website where users can receive uploads.
-
-this package contains an almost complete 
-copy of http://blueimp.github.io/jQuery-File-Upload/
-thanks to Sebastian Tschan for makeing that package
-available under the MIT License
+A mojolicious based webservice based on
+http://blueimp.github.io/jQuery-File-Upload/
+by Sebastian Tschan.
 
 installation
 ------------
-The upload service uses the mojolicious perl module. In all likelyhood you
-will not find this on your system.  I have therefore supplied a little
-script which lets you install this package.  If you install it in a
-directory called 'thirdparty' next to the bin directory, all the files will
-be found automatically.
+Use the classic ./configure; make install approach.
 
- ./setup/build-thirdparty.sh /home/inbox/software/backend/thirdparty
+Once installed you will find a htdoc directory in your installation
+target.
 
-The upload service is suposed to run on a machine where all the users of the
-service have an account.  The upload service assumes the uid of the user on
-whoes behalve it is receiving data. In order todo so, it must run a root.
+Copy this directory into your webserver and configure the webserver to
+execute fcgi (fastcgi) scripts. Note that in the htdocs directory
+there is also a .htaccess file.
 
-We like to run it as a fastcgi service from our webserver and use sudo to
-run it as root. See the example fcgi script in the bin directory.
+configuration
+-------------
 
-Since the upload-service is written using Mojo, you only have to place the
-fcgi script into your web-doc-cgi directory together with the .htaccess file
-as shown in the fcgi example script.
+The upload service gets configured via several environement variables
+
+US_ROOT=/path
+
+where should the uploads go
+
+US_SINGLEUSER=0|1
+
+in single user mode the uploads go straight to $US_ROOT in multi user mode the
+uploads go to $US_ROOT/$USERNAME/INBOX
+
+in multi user mode the url for upload is expected to contain the USER name and the script
+must run a root (use sudo) so that it can suid to the recipient of the files.
+
+US_ENABLE_DELETE=0|1
+
+allow the uploader to delete the files he just uploaded
+
+US_ENABLE_DOWNLOAD=0|1
+
+allow the uploader to download the files he just uploaded
 
 Enjoy!
 tobi

@@ -37,6 +37,7 @@ install-data-local:
 	echo "export US_ROOT=/home/oetiker/inbox" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "export US_SECRET_FILE=/etc/uploadsrc.secret" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "export US_ENABLE_DOWNLOAD=0" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
+	echo "export US_ENABLE_DELETE=0" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "export US_SINGLEUSER=1" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "if [ x$US_SINGLEUSER = x1 ]; then ">>  $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "  $(prefix)/bin/@PACKAGE@.pl fastcgi" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist

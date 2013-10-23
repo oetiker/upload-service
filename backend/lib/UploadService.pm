@@ -28,13 +28,12 @@ sub startup {
 
     my $r = $self->routes;
 
-    # / (upload page)
-    $r->get('/' => 'home');
     my $b;
     # some intial checks
     if ($ENV{US_SINGLEUSER}){
        $b = $r->under(sub {
             my $self = shift;
+            $self->stash(user=>scalar getpwuid($>));
             my $root = $ENV{MOJO_TMPDIR} = $ENV{US_ROOT};
             $self->stash(root => $root);
             if ( not -w $root or not -d $root ) {
@@ -46,6 +45,8 @@ sub startup {
         })
     }
     else {
+       # / (upload page)
+       $r->get('/' => 'home');
        $b = $r->under('/:user' => sub {
             my $self = shift;
             if (not $self->param('user') =~ /^(\w+)$/){
@@ -54,6 +55,7 @@ sub startup {
                return;
             }
             my $username = $1;
+            $self->stash('user'=>$username);
             my $root_dir = $ENV{US_ROOT} || '/tmp';
             my $root = $root_dir . '/'. $username . '/INBOX';
 
@@ -161,12 +163,14 @@ sub startup {
                 eval { 
                     local $SIG{__DIE__};local $SIG{__WARN__};
                     $upload->move_to( $root. '/'.  $outfile ) ; 
-                }
+                };
                 if ($@){
-                    unlik $root. '/.'. $sessionkey .'-'. $outfile;
+                    unlink $root. '/.'. $sessionkey .'-'. $outfile;
+                    my $msg = $@;
+                    $msg =~ s{\sat\s\S+\sline\s\d+.+}{};
                     push @files, {
                         name => $filename,
-                        error => $@
+                        error => $msg
                     }
                 } 
                 else {
