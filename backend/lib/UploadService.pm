@@ -30,47 +30,66 @@ sub startup {
 
     # / (upload page)
     $r->get('/' => 'home');
-
+    my $b;
     # some intial checks
-    my $a = $r->under('/:user' => sub {
-        my $self = shift;
-        if (not $self->param('user') =~ /^(\w+)$/){
-           $self->res->code(403);
-           $self->render( text => 'invalid user');
-           return;
-        }
-        my $username = $1;
-        my $root_dir = $ENV{US_ROOT} || '/tmp';
-        my $root = $root_dir . '/'. $username . '/INBOX';
-
-        $ENV{MOJO_TMPDIR} = $root;
-
-        $self->stash(root=>$root);
-
-        my $uid = getpwnam($username);
-        if (not $uid){
-           $self->res->code(403);
-           $self->render( text => 'unknown user');
-           return;
-        }
-        # lets see if  we can do a bit of user switching
-        if ($< == 0 and $> != $uid ){
-            # switch uid
-            $> = 0;
-            $> = $uid;
-            if ($> != $uid){
+    if ($ENV{US_SINGLEUSER}){
+       $b = $r->under(sub {
+            my $self = shift;
+            my $root = $ENV{MOJO_TMPDIR} = $ENV{US_ROOT};
+            $self->stash(root => $root);
+            if ( not -w $root or not -d $root ) {
                 $self->res->code(403);
-                $self->render( text => 'access denied: '.$!);
+                $self->render( text => 'no INBOX directory');
                 return;
             }
-        }
-        
-        if ( -l $root or not -w $root or not -d $root ) {
-            $self->res->code(403);
-            $self->render( text => 'no INBOX directory in sandbox');
-            return;
-        }
+            $self->render_later;
+        })
+    }
+    else {
+       $b = $r->under('/:user' => sub {
+            my $self = shift;
+            if (not $self->param('user') =~ /^(\w+)$/){
+               $self->res->code(403);
+               $self->render( text => 'invalid user');
+               return;
+            }
+            my $username = $1;
+            my $root_dir = $ENV{US_ROOT} || '/tmp';
+            my $root = $root_dir . '/'. $username . '/INBOX';
 
+            $ENV{MOJO_TMPDIR} = $root;
+
+            $self->stash(root=>$root);
+    
+            my $uid = getpwnam($username);
+            if (not $uid){
+                $self->res->code(403);
+                $self->render( text => 'unknown user');
+                return;
+            }
+            # lets see if  we can do a bit of user switching
+            if ($< == 0 and $> != $uid ){
+                # switch uid
+                $> = 0;
+                $> = $uid;
+                if ($> != $uid){
+                    $self->res->code(403);
+                    $self->render( text => 'access denied: '.$!);
+                    return;
+                }
+            }
+            
+            if ( -l $root or not -w $root or not -d $root ) {
+                $self->res->code(403);
+                $self->render( text => 'no INBOX directory in sandbox');
+                return;
+            }
+            $self->render_later;
+        });
+
+    }
+    $a = $b->under(sub {
+        my $self = shift;
         my $sessionkey = $self->session('skey');
         if (not $sessionkey){
             my $newKey =hmac_sha1_sum(rand,time);
@@ -139,16 +158,28 @@ sub startup {
             my $outfile = strftime("%Y-%m-%d_%H%M%S-$filename",localtime(time));
             $outfile =~ s{/}{_}g;
             if (symlink $outfile, $root. '/.'. $sessionkey .'-'. $outfile and  not -e $root. '/'.  $outfile ){
-                push @files, {
-                    name => $outfile,
-                    size => $upload->size,
-                    $ENV{US_ENABLE_DOWNLOAD} ? ( url => 'download/'.$outfile ): (),
-                    $ENV{US_ENABLE_DELETE} ? (
-                        deleteUrl =>  'delete/'.$outfile,
-                        deleteType => 'DELETE'
-                    ):(),
-                };
-                $upload->move_to( $root. '/'.  $outfile ) ;
+                eval { 
+                    local $SIG{__DIE__};local $SIG{__WARN__};
+                    $upload->move_to( $root. '/'.  $outfile ) ; 
+                }
+                if ($@){
+                    unlik $root. '/.'. $sessionkey .'-'. $outfile;
+                    push @files, {
+                        name => $filename,
+                        error => $@
+                    }
+                } 
+                else {
+                    push @files, {
+                        name => $outfile,
+                        size => $upload->size,
+                        $ENV{US_ENABLE_DOWNLOAD} ? ( url => 'download/'.$outfile ): (),
+                        $ENV{US_ENABLE_DELETE} ? (
+                            deleteUrl =>  'delete/'.$outfile,
+                            deleteType => 'DELETE'
+                        ):(),
+                    };
+                }    
             }
         }
         # return JSON list of uploads
