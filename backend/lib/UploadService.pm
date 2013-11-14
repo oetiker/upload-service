@@ -108,9 +108,8 @@ sub startup {
 
     # / (upload page)
     $a->get('/' => sub {
-        my $self = shift;
-                
-        if ($self->req->url !~ m{/$}){
+        my $self = shift;                
+        if ($self->req->url ne '' and $self->req->url !~ m{/$}){
             $self->redirect_to($self->req->url.'/');
         }
         else {
