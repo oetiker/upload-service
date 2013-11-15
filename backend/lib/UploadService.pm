@@ -208,15 +208,15 @@ sub startup {
         my $key  = $1;
         my $sessionkey = $self->stash('skey');
         my $root = $self->stash('root');
-        if (not -l $root .'/.'.$sessionkey.$key ){
+        if (not -l $root .'/.'.$sessionkey.'-'.$key ){
             $self->res->code(403);
-            $self->render( text => 'access denied');
+            $self->render( text => 'access denied: no link');
             return;
         }
         my $file = Mojo::Asset::File->new(path=>$root . '/'. $key);
         if (not $file->is_file){
             $self->res->code(403);
-            $self->render( text => 'access denied');
+            $self->render( text => 'access denied: no file');
             return;
         }
         $self->render(
@@ -237,19 +237,19 @@ sub startup {
         my $key  = $1;
         my $sessionkey = $self->stash('skey');
         my $root = $self->stash('root');
-        if (not -l $root .'/.'.$sessionkey.$key or -l $root ){
+        if (not -l $root .'/.'.$sessionkey.'-'.$key ){
             $self->res->code(403);
-            $self->render( text => 'access denied');
+            $self->render( text => 'access denied: no link');
             return;
         }
         my $file = Mojo::Asset::File->new(path=>$root . '/'. $key);
         if (not $file->is_file){
             $self->res->code(403);
-            $self->render( text => 'access denied');
+            $self->render( text => 'access denied: no file');
             return;
         }
         unlink $file->path;
-        unlink $root .'/.'.$sessionkey.$key;
+        unlink $root .'/.'.$sessionkey.'-'.$key;
         $self->render( json => 1 );
     });
     }
