@@ -4,8 +4,11 @@ use Mojo::Asset::File;
 use Data::Dumper;
 use Mojo::Util qw(hmac_sha1_sum b64_encode slurp);
 use POSIX qw(strftime);
-# enable receiving uploads up to 1GB
-$ENV{MOJO_MAX_MESSAGE_SIZE} = 1_073_741_824;
+
+# enable receiving uploads up to 5GB unless already set
+BEGIN {
+    $ENV{MOJO_MAX_MESSAGE_SIZE} ||= 5 * 1_073_741_824;
+}
 
 sub startup {
     my $self = shift;
@@ -164,7 +167,7 @@ sub startup {
                     $upload->move_to( $root. '/'.  $outfile ) ; 
                 };
                 if ($@){
-                    $self->log->debug($@);
+                    $self->app->log->error($@);
                     my $msg = $@;
                     $msg =~ s{\sat\s\S+\sline\s\d+.+}{};
                     push @files, {
