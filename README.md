@@ -57,6 +57,8 @@ And to download them again:
 
  US_ENABLE_DOWNLOAD=0|1
 
+In multi user mode, the MOJO_TMPDIR must point to an empty directory
+with mode 0777.
 
 Enjoy!
 tobi
