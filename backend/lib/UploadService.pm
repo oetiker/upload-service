@@ -48,9 +48,9 @@ sub startup {
         })
     }
     else {
-       # / (upload page)
-       $r->get('/' => 'home');
-       $b = $r->under('/:user' => sub {
+        # / (upload page)
+        $r->get('/' => 'home');
+        $b = $r->under('/:user' => sub {
             my $self = shift;
             if (not $self->param('user') =~ /^(\w+)$/){
                $self->res->code(403);
@@ -61,8 +61,6 @@ sub startup {
             $self->stash('user'=>$username);
             my $root_dir = $ENV{US_ROOT} || '/tmp';
             my $root = $root_dir . '/'. $username . '/INBOX';
-
-            $ENV{MOJO_TMPDIR} = $root;
 
             $self->stash(root=>$root);
     
@@ -97,7 +95,7 @@ sub startup {
         my $self = shift;
         my $sessionkey = $self->session('skey');
         if (not $sessionkey){
-            my $newKey =hmac_sha1_sum(rand,time);
+            my $newKey = hmac_sha1_sum(rand,time);
             $self->session(skey => $newKey);
         }
         if (not $self->session('skey') =~ /^(\w+)$/){
@@ -222,10 +220,9 @@ sub startup {
             $self->render( text => 'access denied: no file');
             return;
         }
-        $self->render(
-            data   => $file->slurp,
-            format => 'application/octet-stream'
-        );
+        $self->res->headers->content_type('application/octet-stream');
+        $self->res->content->asset($file);
+        $self->rendered(200);
     });
     }
     if ($ENV{US_ENABLE_DELETE}){    
