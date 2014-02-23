@@ -15,7 +15,7 @@
 <script>
 jQuery(function(){
     var r = new Resumable({
-       target: '/upload', 
+       target: 'upload', 
     });
     if(!r.support) {
        alert("use a modern borowser");
