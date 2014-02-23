@@ -114,7 +114,7 @@ jQuery(function(){
          pctLast = pct;
          file.$progressBar.css({
              width: pct,
-             minWidth: 3ex
+             minWidth: '3ex'
          })
          .text(pct);
      });
