@@ -114,7 +114,7 @@ jQuery(function(){
          pctLast = pct;
          file.$progressBar.css({
              width: pct,
-             minWidth: '3ex'
+             minWidth: '10ex'
          })
          .text(pct);
      });
@@ -157,8 +157,8 @@ jQuery(function(){
         
         var currentSize = totalSize * progress;
         var currentTime = Date.now() / 1000;
-        if ( (currentTime - lastTime) > 2.0 ){
-            speed = Math.round ( (currentSize - lastSize) / (currentTime - lastTime) / 1024 / 1024 );
+        if ( (currentTime - lastTime) > 1 ){
+            speed = Math.round ( (currentSize - lastSize) / (currentTime - lastTime) / 1024 / 1024 *100 )/100;
             lastSize = currentSize;
             lastTime = currentTime;
             $masterStatus.text(
