@@ -4,11 +4,8 @@ use Mojo::Asset::File;
 use Data::Dumper;
 use Mojo::Util qw(hmac_sha1_sum b64_encode slurp);
 use POSIX qw(strftime);
-
-# enable receiving uploads up to 5GB unless already set
-BEGIN {
-    $ENV{MOJO_MAX_MESSAGE_SIZE} ||= 5 * 1_073_741_824;
-}
+use Fcntl 'SEEK_SET';
+use autodie;
 
 sub startup {
     my $self = shift;
@@ -17,13 +14,13 @@ sub startup {
     # properly figure your own path when running under fastcgi    
     $self->hook( before_dispatch => sub {
         my $self = shift;
-        $self->res->headers->header('Access-Control-Allow-Origin' => '*');
         my $reqEnv = $self->req->env;
         my $uri = $reqEnv->{SCRIPT_URI} || $reqEnv->{REQUEST_URI};
         my $path_info = $reqEnv->{PATH_INFO};
         $uri =~ s|/?${path_info}$|/| if $path_info and $uri;
         $self->req->url->base(Mojo::URL->new($uri)) if $uri;
     });
+
     # session is valid for 1 day
     $self->secret(slurp($ENV{US_SECRET_FILE})) if $ENV{US_SECRET_FILE} and -r $ENV{US_SECRET_FILE};
     $self->sessions->cookie_name('uploader');
@@ -114,7 +111,7 @@ sub startup {
             $self->redirect_to($self->req->url.'/');
         }
         else {
-            $self->render(template=>'uploadpage');
+            $self->render(template=>'resumable');
         }
     });
 
@@ -123,137 +120,61 @@ sub startup {
         my $self = shift;
         my $root = $self->stash('root');
         my $sessionkey = $self->stash('skey');
-        my @list;
-        for my $link (glob $root.'/.*-*-*_*'){
-            next if not -l $link;
-            my $dest = readlink $link;
-            if (not -f $root.'/'.$dest){
-                unlink $link;
-                next;
-            };
-            next if $link !~ m[^${root}/\.${sessionkey}];
-            my $file = Mojo::Asset::File->new(path=>$root.'/'.$dest);                        
-            next unless $file->is_file;
-            push @list, {
-                name => $dest,
-                size => $file->size,
-                $ENV{US_ENABLE_DOWNLOAD} ? ( url => 'download/'.$dest ): (),
-                $ENV{US_ENABLE_DELETE} ? (
-                    deleteUrl =>  'delete/'.$dest,
-                    deleteType => 'DELETE'
-                ):(),
-            };
+        my $name = '.'.$sessionkey.'-'.cleanName($self->param('resumableIdentifier'));  
+        my $chunkNr = int($self->param('resumableChunkNumber'));
+        if (-e $root.'/'.$name.'.'.$chunkNr){
+            $self->render(text=>'chunk ok',status=>200);
         }
-        return $self->render( json => { files => \@list } );
+        else {
+            $self->render(text=>'chunk missing',status=>206);
+        }
     });
 
     # POST /upload (push one or more files to app)
     $a->post('/upload' => sub {
         my $self    = shift;
-        my @uploads = $self->req->upload('files[]');
-
-        my @files;
         my $sessionkey = $self->stash('skey');
         my $root = $self->stash('root');
-        for my $upload (@uploads) {
-            my $filename = $upload->filename;
-            my $outfile = strftime("%Y-%m-%d_%H%M%S-$filename",localtime(time));
-            $outfile =~ s{/}{_}g;
-            if (symlink $outfile, $root. '/.'. $sessionkey .'-'. $outfile and  not -e $root. '/'.  $outfile ){
-                eval { 
-                    local $SIG{__DIE__};local $SIG{__WARN__};
-                    $upload->move_to( $root. '/'.  $outfile ) ; 
-                };
-                if ($@){
-                    $self->app->log->error($@);
-                    my $msg = $@;
-                    $msg =~ s{\sat\s\S+\sline\s\d+.+}{};
-                    push @files, {
-                        name => $filename,
-                        error => $msg
-                    };
-                    unlink $root. '/.'. $sessionkey .'-'. $outfile;
-                } 
-                else {
-                    push @files, {
-                        name => $outfile,
-                        size => $upload->size,
-                        $ENV{US_ENABLE_DOWNLOAD} ? ( url => 'download/'.$outfile ): (),
-                        $ENV{US_ENABLE_DELETE} ? (
-                            deleteUrl =>  'delete/'.$outfile,
-                            deleteType => 'DELETE'
-                        ):(),
-                    };
-                }    
-            } 
-            else {
-                push @files, {
-                    name => $filename,
-                    error => "$!",
-                };
-            }
+        my $name = '.'.$sessionkey.'-'.cleanName($self->param('resumableIdentifier'));  
+        my $chunkNr = int($self->param('resumableChunkNumber'));
+        my $chunkSize = int($self->param('resumableChunkSize'));
+        my $chunkTotal = int($self->param('resumableTotalChunks'));
+        my $thisChunkSize = int($self->param('resumableCurrentChunkSize'));
+        my $data = $self->req->upload('file')->slurp;
+        my $dataLen = length($data);
+        if ($dataLen != $thisChunkSize){
+            warn "$dataLen != $thisChunkSize\n";
+            $self->render(status=>500,text=>'data size does not match');
+            return;
         }
-        # return JSON list of uploads
-        $self->render( json => { files => \@files } );
+        my $file = $root.'/'.$name;
+        if (not -e $file){
+            open my $c,'>>',$file;
+            close $c
+        }
+        open my $fh, "+<", $file;
+        binmode $fh,':raw';
+        sysseek $fh,($chunkNr-1)*$chunkSize,SEEK_SET;
+        syswrite $fh,$data;
+        close $fh;
+        open my $touch, '>',$file.'.'.$chunkNr;
+        close $touch;
+        $self->render(text=>'ok',status=>200);
+        my @rm;
+        for (1..$chunkTotal){
+            my $chunk = $root.'/'.$name.'.'.$_;
+            return if not -e $chunk;
+            push @rm, $chunk;
+        }
+        rename $file,$root.'/'.strftime('%Y-%m-%d_%H-%M-%S_',localtime(time)).$self->param('resumableFilename');
+        unlink @rm;
     });
+}
 
-    if ($ENV{US_ENABLE_DOWLOAD}){
-    # /download/files/foo.txt
-    $a->get('/download/#key' => sub {
-        my $self = shift;
-        if (not $self->param('key') =~ m{([^/]+)}){
-            $self->res->code(403);
-            $self->render( text => 'bad key');
-            return;
-        }
-        my $key  = $1;
-        my $sessionkey = $self->stash('skey');
-        my $root = $self->stash('root');
-        if (not -l $root .'/.'.$sessionkey.'-'.$key ){
-            $self->res->code(403);
-            $self->render( text => 'access denied: no link');
-            return;
-        }
-        my $file = Mojo::Asset::File->new(path=>$root . '/'. $key);
-        if (not $file->is_file){
-            $self->res->code(403);
-            $self->render( text => 'access denied: no file');
-            return;
-        }
-        $self->res->headers->content_type('application/octet-stream');
-        $self->res->content->asset($file);
-        $self->rendered(200);
-    });
-    }
-    if ($ENV{US_ENABLE_DELETE}){    
-    # /delete/files/bar.tar.gz
-    $a->delete('/delete/#key' => sub {
-        my $self = shift;
-        if (not $self->param('key') =~ m{([^/]+)}){
-            $self->res->code(403);
-            $self->render( text => 'bad key');
-            return;
-        }
-        my $key  = $1;
-        my $sessionkey = $self->stash('skey');
-        my $root = $self->stash('root');
-        if (not -l $root .'/.'.$sessionkey.'-'.$key ){
-            $self->res->code(403);
-            $self->render( text => 'access denied: no link');
-            return;
-        }
-        my $file = Mojo::Asset::File->new(path=>$root . '/'. $key);
-        if (not $file->is_file){
-            $self->res->code(403);
-            $self->render( text => 'access denied: no file');
-            return;
-        }
-        unlink $file->path;
-        unlink $root .'/.'.$sessionkey.'-'.$key;
-        $self->render( json => 1 );
-    });
-    }
-
+sub cleanName {
+    my $name = shift;
+    $name =~ s/[^-_a-z0-9]+/_/g;
+    return $name;
 }
 
 1;
