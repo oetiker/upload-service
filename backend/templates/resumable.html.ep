@@ -209,7 +209,7 @@ jQuery(function(){
 
 <div class="row">
   <div class="col-xs-12">
-    <h1 class="text-center">Upload Service</h1>
+    <h1 class="text-center"><%=  [ split /,/, [ getpwnam( stash('user') ) ]->[6] ]->[0] %>'s INBOX</h1>
   </div>
 </div>
 
