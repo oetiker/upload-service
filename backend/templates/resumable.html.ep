@@ -107,13 +107,14 @@ jQuery(function(){
      });
 
      r.on('fileProgress',function(file){
-         var pct = Math.round(file.progress(false)*100) + '%';
+         var pct = Math.round(file.progress(false)*10000)/100 + '%';
          if (pct == pctLast){
             return;
          }
          pctLast = pct;
          file.$progressBar.css({
-             width: pct
+             width: pct,
+             minWidth: 3ex
          })
          .text(pct);
      });
@@ -136,7 +137,7 @@ jQuery(function(){
      });   
  
      var lastSize = 0;
-     var lastTime = Date.now(); 
+     var lastTime = Date.now()/1000; 
      var speed = '';
      var pctLast;
      r.on('progress',function(){
@@ -154,20 +155,18 @@ jQuery(function(){
             totalSize += file.size;
         });
         
-        var doneSize = totalSize * progress;
-        var reaminingSize = totalSize - doneSize;
-        var timeStamp = Date.now();
-        if (timeStamp - lastTime > 2000 ){
-            speed = Math.round((doneSize - lastSize) / (timeStamp - lastTime) * 10000 / 1024 / 1024)/10;
-            lastSize = doneSize;
-            lastTime = timeStamp;
+        var currentSize = totalSize * progress;
+        var currentTime = Date.now() / 1000;
+        if ( (currentTime - lastTime) > 2.0 ){
+            speed = Math.round ( (currentSize - lastSize) / (currentTime - lastTime) / 1024 / 1024 );
+            lastSize = currentSize;
+            lastTime = currentTime;
+            $masterStatus.text(
+               speed + ' MByte/s - '
+               + Math.round(currentSize / 1024 / 1024) + ' MByte of '
+               + Math.round(totalSize / 1024 / 1024) + ' MByte'
+           );
         }
-
-        $masterStatus.text(
-            speed + ' MByte/s - '
-            + Math.round(doneSize / 1024/1024) + ' MByte of '
-            + Math.round(totalSize / 1024/1024) + ' MByte'
-        );
      });
 
      r.on('complete',function(){
