@@ -153,25 +153,31 @@ jQuery(function(){
      var startTime;
      r.on('progress',function(){
         var progress = r.progress();
-        var pct = Math.round(progress*100) + '%';
-        if (pct == pctLast){
-           return;
-        }
-        pctLast = pct;
-        $masterProgressBar.css({
-            width: pct
-        }).text(pct);                
         var totalSize = 0;
         r.files.forEach(function(file){
             totalSize += file.size;
         });
         
+         
         var currentSize = totalSize * progress + filesComplete;
+        totalSize = totalSize + filesComplete;
+
+        var pct = Math.round(currentSize/totalSize*100) + '%';
+        if (pct == pctLast){
+           return;
+        }
+
+        pctLast = pct;
+        $masterProgressBar.css({
+            width: pct
+        }).text(pct);                
+ 
         var currentTime = Date.now() / 1000;
         if (!startTime){
             startTime = currentTime;
         }
         speed = Math.round ( currentSize / (currentTime - startTime) / 1024 / 1024 *100 )/100;
+ 
         $masterStatus.text(
            speed + ' MByte/s - '
            + Math.round(currentSize / 1024 / 1024) + ' MByte of '
