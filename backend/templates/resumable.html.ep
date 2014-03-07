@@ -138,9 +138,6 @@ jQuery(function(){
            .text('Uploads Complete!')
            .addClass('progress-bar-success')
            .css({width: '100%'})    
-//        $masterStatus.text(
- //           Math.round(filesComplete / 1024 / 1024) + ' MByte Uploaded'
-  //      );
      });
 
      r.on('fileError', function(file, message){
@@ -181,7 +178,7 @@ jQuery(function(){
         $masterStatus.text(
            speed + ' MByte/s - '
            + Math.round(currentSize / 1024 / 1024) + ' MByte of '
-           + Math.round((totalSize + filesComplete) / 1024 / 1024) + ' MByte'
+           + Math.round(totalSize / 1024 / 1024) + ' MByte'
         );
      });
   });
