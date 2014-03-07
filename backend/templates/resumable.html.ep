@@ -164,7 +164,7 @@ jQuery(function(){
         
         var currentSize = totalSize * progress;
         var currentTime = Date.now() / 1000;
-        if ( (currentTime - lastTime) > 1 ){
+        if ( (currentTime - lastTime) > 1 || progress == 1 ){
             speed = Math.round ( (currentSize - lastSize) / (currentTime - lastTime) / 1024 / 1024 *100 )/100;
             lastSize = currentSize;
             lastTime = currentTime;
