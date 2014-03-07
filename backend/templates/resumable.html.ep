@@ -173,11 +173,10 @@ jQuery(function(){
         }
         speed = Math.round ( currentSize / (currentTime - startTime) / 1024 / 1024 *100 )/100;
         $masterStatus.text(
-               speed + ' MByte/s - '
-               + Math.round(currentSize / 1024 / 1024) + ' MByte of '
-               + Math.round((totalSize + filesComplete) / 1024 / 1024) + ' MByte'
-           );
-        }
+           speed + ' MByte/s - '
+           + Math.round(currentSize / 1024 / 1024) + ' MByte of '
+           + Math.round((totalSize + filesComplete) / 1024 / 1024) + ' MByte'
+        );
      });
   });
 </script>
