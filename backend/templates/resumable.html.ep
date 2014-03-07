@@ -16,6 +16,7 @@
 jQuery(function(){
     var r = new Resumable({
        target: 'upload', 
+       permanentErrors: [404, 415, 501]
     });
     if(!r.support) {
        alert("use a modern borowser");
@@ -137,10 +138,6 @@ jQuery(function(){
      });
 
      r.on('fileError', function(file, message){
-        if (new RegExp('500 Internal Server Error').test(message)){
-             message = "recovering from server error (waiting 5s) ...";
-             window.setTimeout(function(){file.retry()},5000);
-        }
         file.$progressBar
             .addClass('progress-bar-error')
             .text(message);
