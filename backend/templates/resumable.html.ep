@@ -137,6 +137,10 @@ jQuery(function(){
      });
 
      r.on('fileError', function(file, message){
+        if (new RegExp('500 Internal Server Error').test(message)){
+             message = "recovering from server error (waiting 5s) ...";
+             window.setTimeout(function(){file.retry()},5000);
+        }
         file.$progressBar
             .addClass('progress-bar-error')
             .text(message);
