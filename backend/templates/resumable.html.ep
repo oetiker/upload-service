@@ -77,6 +77,7 @@ jQuery(function(){
         var $progress = jQuery('<div class="progress"/>');
         var $progressBar = jQuery('<div class="progress-bar progress-bar-warning"  role="progressbar">Chunking File. Please Wait</div>');
         file.$progressBar = $progressBar;
+        file.$btnGroup = $btnGroup;
 
         $progressCol.append($progress);
         $progress.append($progressBar);
@@ -120,14 +121,19 @@ jQuery(function(){
      });
 
      r.on('fileSuccess', function(file, message){
-        file.$progressBar.addClass('progress-bar-success')
-        .text('100%');        
+        file.$progressBar
+        .addClass('progress-bar-success')
+        .css({ width: '100%' }) 
+        .text('Upload Complete');
+        r.removeFile(file);
+        file.$btnGroup.hide();
      });
 
      r.on('complete',function(){
         $masterProgressBar
            .text('Uploads Complete!')
-           .css({width: '100%'})        
+           .addClass('progress-bar-success')
+           .css({width: '100%'})    
      });
 
      r.on('fileError', function(file, message){
@@ -167,11 +173,6 @@ jQuery(function(){
                + Math.round(totalSize / 1024 / 1024) + ' MByte'
            );
         }
-     });
-
-     r.on('complete',function(){
-        $masterProgressBar
-        .addClass('progress-bar-success')
      });
   });
 </script>
