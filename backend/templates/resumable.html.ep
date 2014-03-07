@@ -87,13 +87,12 @@ jQuery(function(){
         $row.append($actions);        
      });
 
-     var pctLast;
      r.on('chunkingProgress',function(file,progress){
          var pct = Math.round(progress*100) + '%';
-         if (pctLast == pct){
+         if (file.pctLast == pct){
              return;
          }
-         pctLast = pct;
+         file.pctLast = pct;
          file.$progressBar.css({
              width: pct
          })
@@ -110,16 +109,18 @@ jQuery(function(){
 
      r.on('fileProgress',function(file){
          var pct = Math.round(file.progress(false)*10000)/100 + '%';
-         if (pct == pctLast){
+         if (pct == file.pctLast){
             return;
          }
-         pctLast = pct;
+         file.pctLast = pct;
          file.$progressBar.css({
              width: pct,
              minWidth: '10ex'
          })
          .text(pct);
      });
+
+     var filesComplete = 0;
 
      r.on('fileSuccess', function(file, message){
         file.$progressBar
@@ -128,13 +129,18 @@ jQuery(function(){
         .text('Upload Complete');
         r.removeFile(file);
         file.$btnGroup.hide();
+        filesComplete += file.size;
      });
+
 
      r.on('complete',function(){
         $masterProgressBar
            .text('Uploads Complete!')
            .addClass('progress-bar-success')
            .css({width: '100%'})    
+        $masterStatus.text(
+            Math.round(filesComplete / 1024 / 1024) + ' MByte Uploaded'
+        );
      });
 
      r.on('fileError', function(file, message){
@@ -143,10 +149,8 @@ jQuery(function(){
             .text(message);
      });   
  
-     var lastSize = 0;
-     var lastTime = Date.now()/1000; 
-     var speed = '';
-     var pctLast;
+     var pctLast = 0;
+     var startTime;
      r.on('progress',function(){
         var progress = r.progress();
         var pct = Math.round(progress*100) + '%';
@@ -162,16 +166,16 @@ jQuery(function(){
             totalSize += file.size;
         });
         
-        var currentSize = totalSize * progress;
+        var currentSize = totalSize * progress + filesComplete;
         var currentTime = Date.now() / 1000;
-        if ( (currentTime - lastTime) > 1 || progress == 1 ){
-            speed = Math.round ( (currentSize - lastSize) / (currentTime - lastTime) / 1024 / 1024 *100 )/100;
-            lastSize = currentSize;
-            lastTime = currentTime;
-            $masterStatus.text(
+        if (!startTime){
+            startTime = currentTime;
+        }
+        speed = Math.round ( currentSize / (currentTime - startTime) / 1024 / 1024 *100 )/100;
+        $masterStatus.text(
                speed + ' MByte/s - '
                + Math.round(currentSize / 1024 / 1024) + ' MByte of '
-               + Math.round(totalSize / 1024 / 1024) + ' MByte'
+               + Math.round((totalSize + filesComplete) / 1024 / 1024) + ' MByte'
            );
         }
      });
