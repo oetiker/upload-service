@@ -138,9 +138,9 @@ jQuery(function(){
            .text('Uploads Complete!')
            .addClass('progress-bar-success')
            .css({width: '100%'})    
-        $masterStatus.text(
-            Math.round(filesComplete / 1024 / 1024) + ' MByte Uploaded'
-        );
+//        $masterStatus.text(
+ //           Math.round(filesComplete / 1024 / 1024) + ' MByte Uploaded'
+  //      );
      });
 
      r.on('fileError', function(file, message){
