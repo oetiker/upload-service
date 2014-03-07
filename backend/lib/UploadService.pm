@@ -143,8 +143,7 @@ sub startup {
         my $data = $self->req->upload('file')->slurp;
         my $dataLen = length($data);
         if ($dataLen != $thisChunkSize){
-            warn "$dataLen != $thisChunkSize\n";
-            $self->render(status=>500,text=>'data size does not match');
+            $self->render(status=>206,text=>'upload size was not as expected');
             return;
         }
         my $file = $root.'/'.$name;
