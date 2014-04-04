@@ -448,6 +448,9 @@ install-data-local:
 	echo "export US_ENABLE_DOWNLOAD=0" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "export US_ENABLE_DELETE=0" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "export US_SINGLEUSER=1" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
+	echo "# export MOJO_TMPDIR=/scratch/upload" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
+	echo "# mkdir -p $MOJO_TMPDIR" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
+	echo "# chmod 777 $MOJO_TMPDIR" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo 'if [ x\$US_SINGLEUSER = x1 ]; then'>>  $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "  $(prefix)/bin/us.pl fastcgi" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "else " >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist

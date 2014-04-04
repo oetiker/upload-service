@@ -18,8 +18,10 @@ jQuery(function(){
        target: 'upload', 
        permanentErrors: [404, 415, 501]
     });
+    jQuery('.browser-issue').hide();
     if(!r.support) {
-       alert("use a modern borowser");
+       jQuery('.browser-issue').show();
+       jQuery('.action-buttons').hide();
        return;
     }
 
@@ -223,7 +225,14 @@ jQuery(function(){
 
 <br/>
 
-<div class="row">
+<div class="jumbotron browser-issue">
+  <h1>Sorry, your Browser is too old!</h1>
+  <p>It seems you are using an old browser. The upload service requires the HTML5 File API to work. This is supported by IE10+, Firefox 4+, Chrome 21+, Opera 12+, Safari 6+.
+  The easiest way to get this working may be to get a copy of Chrome, you can use the button below.</p>
+  <p><a class="btn btn-primary btn-lg" role="button" href="https://chrome.google.com">Get a copy of Google Chrome</a></p>
+</div>
+
+<div class="row action-buttons">
   <div class="col-xs-12">
     <span id="dropTarget" class="btn btn-primary btn-file btn-lg">
       <span class="glyphicon glyphicon-ok-sign"></span> Select Files <input id="browseBtn" type="file">
@@ -246,14 +255,11 @@ jQuery(function(){
   </div>
 </div>
 
-</div>
+</div> <!-- end first container -->
 
-</div>
-</div>
 <br/>
 <br/>
 <div class="container" id="fileList">
-</div>
 </div>
 </body>
 </html>
