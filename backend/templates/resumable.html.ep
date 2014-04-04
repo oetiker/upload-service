@@ -226,9 +226,10 @@ jQuery(function(){
 <br/>
 
 <div class="jumbotron browser-issue">
-  <h1>Sorry, your Browser is too old!</h1>
-  <p>It seems you are using an old browser. The upload service requires the HTML5 File API to work. This is supported by IE10+, Firefox 4+, Chrome 21+, Opera 12+, Safari 6+.
-  The easiest way to get this working may be to get a copy of Chrome, you can use the button below.</p>
+  <h1>Upload don't work with your Browser!</h1>
+  <p>It seems you are using a rather old browser version. The upload service requires the HTML5 File API to work. The API is implemented by
+  IE 10+, Firefox 4+, Chrome 21+, Opera 12+, Safari 6+.
+  The easiest way to get this working may be to get a copy of Google Chrome installed. For this you often don't even need administrator privileges. Use the button below surf to googles download page.</p>
   <p><a class="btn btn-primary btn-lg" role="button" href="https://chrome.google.com">Get a copy of Google Chrome</a></p>
 </div>
 
@@ -245,7 +246,7 @@ jQuery(function(){
 
 <br/>
 
-<div class="row">
+<div class="row action-buttons">
   <div class="col-xs-8">
     <div class="progress">
       <div id="masterProgressBar" class="progress-bar"  role="progressbar"></div>
