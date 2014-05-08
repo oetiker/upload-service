@@ -1,9 +1,9 @@
 upload-service
 ==============
 
-A File-Upload Web Application. The backend is written in Perl using
-http://mojolicious.org, the frontend leverages
-http://blueimp.github.io/jQuery-File-Upload/.
+A File-Upload Web Application capable of dealing with *LARGE* files. The
+backend is written in Perl using http://mojolicious.org, the frontend
+leverages http://github.com/23/resumable.js
 
 installation
 ------------
