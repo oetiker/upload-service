@@ -5,7 +5,6 @@ use Data::Dumper;
 use Mojo::Util qw(hmac_sha1_sum b64_encode slurp);
 use POSIX qw(strftime);
 use Fcntl 'SEEK_SET';
-use autodie;
 
 sub startup {
     my $self = shift;
@@ -146,27 +145,39 @@ sub startup {
             $self->render(status=>206,text=>'upload size was not as expected');
             return;
         }
-        my $file = $root.'/'.$name;
-        if (not -e $file){
-            open my $c,'>>',$file;
-            close $c
+        
+        eval {
+            use autodie;
+            local $SIG{__DIE__};
+            my $file = $root.'/'.$name;
+            if (not -e $file){
+                open my $c,'>>',$file;
+                close $c
+            }
+            open my $fh, "+<", $file;
+            binmode $fh,':raw';
+            sysseek $fh,($chunkNr-1)*$chunkSize,SEEK_SET;
+            syswrite $fh,$data;
+            close $fh;
+            open my $touch, '>',$file.'.'.$chunkNr;
+            close $touch;
+            $self->render(text=>'ok',status=>200);
+            my @rm;
+            for (1..$chunkTotal){
+                my $chunk = $root.'/'.$name.'.'.$_;
+                return if not -e $chunk;
+                push @rm, $chunk;
+                }
+            rename $file,$root.'/'.strftime('%Y-%m-%d_%H-%M-%S_',localtime(time)).$self->param('resumableFilename');
+            unlink @rm;
+        };
+
+        if ($@ and $@->isa('autodie::exception')) {
+            $self->app->log->warn($@->errno);
+            $self->render(status=>404,text=>$@->errno);
+        } elsif ($@) {
+            die $@;
         }
-        open my $fh, "+<", $file;
-        binmode $fh,':raw';
-        sysseek $fh,($chunkNr-1)*$chunkSize,SEEK_SET;
-        syswrite $fh,$data;
-        close $fh;
-        open my $touch, '>',$file.'.'.$chunkNr;
-        close $touch;
-        $self->render(text=>'ok',status=>200);
-        my @rm;
-        for (1..$chunkTotal){
-            my $chunk = $root.'/'.$name.'.'.$_;
-            return if not -e $chunk;
-            push @rm, $chunk;
-        }
-        rename $file,$root.'/'.strftime('%Y-%m-%d_%H-%M-%S_',localtime(time)).$self->param('resumableFilename');
-        unlink @rm;
     });
 }
 

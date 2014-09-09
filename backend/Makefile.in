@@ -445,8 +445,6 @@ install-data-local:
 	echo "#!/bin/sh" > $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "export US_ROOT=/home/oetiker/inbox" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "export US_SECRET_FILE=/etc/uploadsrc.secret" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
-	echo "export US_ENABLE_DOWNLOAD=0" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
-	echo "export US_ENABLE_DELETE=0" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "export US_SINGLEUSER=1" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "# export MOJO_TMPDIR=/scratch/upload" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist
 	echo "# mkdir -p $MOJO_TMPDIR" >> $(DESTDIR)$(HTDOCSDIR)/upload-service.fcgi.dist

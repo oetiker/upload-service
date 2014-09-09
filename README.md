@@ -47,16 +47,6 @@ In multi-user mode you get
 
  http://your-site/script-url/USERNAME/
 
-The system keeps track who has uploaded which files. So that the uploader sees
-a list of files he has uploaded. You can even give the uploader the ability
-to delete his uploades:
-
- US_ENABLE_DELETE=0|1
-
-And to download them again:
-
- US_ENABLE_DOWNLOAD=0|1
-
 In multi user mode, the MOJO_TMPDIR must point to an empty directory
 with mode 0777.
 

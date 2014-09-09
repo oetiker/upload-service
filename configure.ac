@@ -1,4 +1,4 @@
-AC_INIT([upload-service],[0.1],[tobi@oetiker.ch])
+AC_INIT([upload-service],[0.2],[tobi@oetiker.ch])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR(conftools)
 
