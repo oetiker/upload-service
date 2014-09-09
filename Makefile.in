@@ -49,7 +49,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure INSTALL \
+	$(srcdir)/Makefile.in $(top_srcdir)/configure \
 	conftools/install-sh conftools/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -206,7 +206,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = backend
-EXTRA_DIST = INSTALL COPYRIGHT LICENSE CHANGES AUTHORS setup/build-thirdparty.sh setup/sdbs.inc
+EXTRA_DIST = COPYRIGHT LICENSE CHANGES AUTHORS setup/build-thirdparty.sh setup/sdbs.inc
 YEAR := $(shell date +%Y)
 DATE := $(shell date +%Y-%m-%d)
 all: all-recursive
@@ -697,9 +697,6 @@ uninstall-am:
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am
 
-
-INSTALL: backend/lib/SmokePing/INSTALL.pod
-	pod2text -l backend/lib/SmokePing/INSTALL.pod > INSTALL
 
 dist-hook:
 	$(PERL) -i -p -e 's/#VERSION#/$(PACKAGE_VERSION)/g;s/#YEAR#/$(YEAR)/g;s/#DATE#/$(DATE)/g;'  $(distdir)/README $(distdir)/COPYRIGHT
