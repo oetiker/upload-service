@@ -1,10 +1,8 @@
-AC_INIT([upload-service],[0.2],[tobi@oetiker.ch])
+AC_INIT([upload-service],[0.3.0],[tobi@oetiker.ch])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR(conftools)
 
 
-# AC_CANONICAL_TARGET
-m4_version_prereq(2.60, [AC_USE_SYSTEM_EXTENSIONS], [#])
 # need this to allow long path names
 AM_INIT_AUTOMAKE([1.9 tar-ustar foreign no-dependencies no-installinfo no-texinfo.tex nostdinc ])
 AM_MAINTAINER_MODE
@@ -42,7 +40,7 @@ AC_ARG_VAR(GMAKE,   [Path to local GNU Make binary])
 AC_PATH_PROGS(GMAKE, [gnumake gmake make])
 
 AC_MSG_CHECKING([checking for gnu make availablility])
-if  ( $GMAKE --version 2> /dev/null | $GREP GNU  > /dev/null 2>&1 );  then
+if  ( $GMAKE --version 2> /dev/null | grep GNU  > /dev/null 2>&1 );  then
     AC_MSG_RESULT([$GMAKE is GNU make])
 else
     AC_MSG_ERROR([GNU make not found. Try setting the GMAKE environment variable.])
