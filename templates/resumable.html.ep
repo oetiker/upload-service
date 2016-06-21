@@ -5,17 +5,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Upload Service</title>
-    <script src="<%= $ENV{US_SINGLEUSER} ? '' : '../' %>js/resumable.js"></script>
+    <script src="<%= $ENV{US_SINGLEUSER} ? '' : '../' %><%= $ENV{US_TAGMODE} ? '../' : '' %>js/resumable.js"></script>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <!-- Latest compiled and minified JavaScript -->
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
 <script>
 jQuery(function(){
     var r = new Resumable({
-       target: 'upload', 
+       target: 'upload',
        permanentErrors: [404, 415, 501]
     });
     jQuery('.browser-issue').hide();
@@ -28,8 +28,8 @@ jQuery(function(){
         jQuery('#startBtn').click(function(){
              r.files.forEach(function(file){
                 file.$progressBar
-                   .removeClass('progress-bar-success')                   
-                   .text('Waiting my turn ...')                   
+                   .removeClass('progress-bar-success')
+                   .text('Waiting my turn ...')
              });
              r.upload();
         });
@@ -51,7 +51,7 @@ jQuery(function(){
 
      var $masterProgressBar = jQuery('#masterProgressBar');
      var $masterStatus = jQuery('#masterStatus');
- 
+
      r.on('chunkingStart', function(file){
         var $row = jQuery('<div class="row"><div class="col-sm-3">' + file.fileName + '</div></div>');
         $fileList.append($row);
@@ -70,7 +70,7 @@ jQuery(function(){
         $btnGroup.append(mkBtn('primary','repeat',function(){
             file.retry()
         }));
-         
+
         $btnGroup.append(mkBtn('danger','ban-circle',function(){
             file.cancel();
             $row.remove();
@@ -85,8 +85,8 @@ jQuery(function(){
         $progressCol.append($progress);
         $progress.append($progressBar);
 
-        $row.append($progressCol);      
-        $row.append($actions);        
+        $row.append($progressCol);
+        $row.append($actions);
      });
 
      r.on('chunkingProgress',function(file,progress){
@@ -106,7 +106,7 @@ jQuery(function(){
              .removeClass('progress-bar-warning')
              .addClass('progress-bar-success')
              .text('Ready to Upload, Press Start!')
-             .css({ width: '100%' });        
+             .css({ width: '100%' });
      });
 
      r.on('fileProgress',function(file){
@@ -127,7 +127,7 @@ jQuery(function(){
      r.on('fileSuccess', function(file, message){
         file.$progressBar
         .addClass('progress-bar-success')
-        .css({ width: '100%' }) 
+        .css({ width: '100%' })
         .text('Upload Complete');
         r.removeFile(file);
         file.$btnGroup.hide();
@@ -139,15 +139,15 @@ jQuery(function(){
         $masterProgressBar
            .text('Uploads Complete!')
            .addClass('progress-bar-success')
-           .css({width: '100%'})    
+           .css({width: '100%'})
      });
 
      r.on('fileError', function(file, message){
         file.$progressBar
             .addClass('progress-bar-error')
             .text(message);
-     });   
- 
+     });
+
      var pctLast = 0;
      var startTime;
      r.on('progress',function(){
@@ -156,8 +156,8 @@ jQuery(function(){
         r.files.forEach(function(file){
             totalSize += file.size;
         });
-        
-         
+
+
         var currentSize = totalSize * progress + filesComplete;
         totalSize = totalSize + filesComplete;
 
@@ -169,14 +169,14 @@ jQuery(function(){
         pctLast = pct;
         $masterProgressBar.css({
             width: pct
-        }).text(pct);                
- 
+        }).text(pct);
+
         var currentTime = Date.now() / 1000;
         if (!startTime){
             startTime = currentTime;
         }
         speed = Math.round ( currentSize / (currentTime - startTime) / 1024 / 1024 *100 )/100;
- 
+
         $masterStatus.text(
            speed + ' MByte/s - '
            + Math.round(currentSize / 1024 / 1024) + ' MByte of '
@@ -265,4 +265,3 @@ jQuery(function(){
 </div>
 </body>
 </html>
-

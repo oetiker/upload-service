@@ -16,6 +16,7 @@
 
 #  Copyright (C) 2016 Tobias Oetiker
 
+
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -120,7 +121,7 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(bindir)"
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(datadir)"
 SCRIPTS = $(dist_bin_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -149,6 +150,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+DATA = $(nobase_data_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -307,11 +309,14 @@ top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = thirdparty lib
 BIN = bin/$(SCRIPT_NAME) bin/run.sh
+PUBLIC := $(shell test -d public && find public -type f)
+TEMPLATES := $(shell test -d templates && find templates -name "*.ep")
 PERLTESTS := $(shell test -d t && find t -name "*.t")
 THIRDPARTY_DIR := $(shell pwd)/thirdparty
-EXTRA_DIST = VERSION PERL_MODULES COPYRIGHT LICENSE CHANGES AUTHORS bootstrap $(BIN) $(PERLTESTS)
+EXTRA_DIST = VERSION PERL_MODULES COPYRIGHT LICENSE CHANGES AUTHORS bootstrap $(BIN) $(PERLTESTS) $(PUB) $(TEMPLATES)
 YEAR := $(shell date +%Y)
 DATE := $(shell date +%Y-%m-%d)
+nobase_data_DATA = $(PUBLIC) $(TEMPLATES)
 dist_bin_SCRIPTS = $(BIN)
 all: all-recursive
 
@@ -385,6 +390,30 @@ uninstall-dist_binSCRIPTS:
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
 	dir='$(DESTDIR)$(bindir)'; $(am__uninstall_files_from_dir)
+install-nobase_dataDATA: $(nobase_data_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(nobase_data_DATA)'; test -n "$(datadir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(datadir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(datadir)" || exit 1; \
+	fi; \
+	$(am__nobase_list) | while read dir files; do \
+	  xfiles=; for file in $$files; do \
+	    if test -f "$$file"; then xfiles="$$xfiles $$file"; \
+	    else xfiles="$$xfiles $(srcdir)/$$file"; fi; done; \
+	  test -z "$$xfiles" || { \
+	    test "x$$dir" = x. || { \
+	      echo " $(MKDIR_P) '$(DESTDIR)$(datadir)/$$dir'"; \
+	      $(MKDIR_P) "$(DESTDIR)$(datadir)/$$dir"; }; \
+	    echo " $(INSTALL_DATA) $$xfiles '$(DESTDIR)$(datadir)/$$dir'"; \
+	    $(INSTALL_DATA) $$xfiles "$(DESTDIR)$(datadir)/$$dir" || exit $$?; }; \
+	done
+
+uninstall-nobase_dataDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nobase_data_DATA)'; test -n "$(datadir)" || list=; \
+	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
+	dir='$(DESTDIR)$(datadir)'; $(am__uninstall_files_from_dir)
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -685,10 +714,10 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(SCRIPTS)
+all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(datadir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -742,7 +771,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am:
+install-data-am: install-nobase_dataDATA
 
 install-dvi: install-dvi-recursive
 
@@ -789,7 +818,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-dist_binSCRIPTS
+uninstall-am: uninstall-dist_binSCRIPTS uninstall-nobase_dataDATA
 
 .MAKE: $(am__recursive_targets) install-am install-exec-am \
 	install-strip
@@ -804,12 +833,12 @@ uninstall-am: uninstall-dist_binSCRIPTS
 	install-data-am install-dist_binSCRIPTS install-dvi \
 	install-dvi-am install-exec install-exec-am install-exec-hook \
 	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
+	install-man install-nobase_dataDATA install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am tags tags-am uninstall uninstall-am \
-	uninstall-dist_binSCRIPTS
+	uninstall-dist_binSCRIPTS uninstall-nobase_dataDATA
 
 
 README COPYRIGHT : VERSION

@@ -6,16 +6,20 @@ SUBDIRS = thirdparty lib
 
 BIN = bin/$(SCRIPT_NAME) bin/run.sh
 
+PUBLIC := $(shell test -d public && find public -type f)
+TEMPLATES := $(shell test -d templates && find templates -name "*.ep")
+
 PERLTESTS := $(shell test -d t && find t -name "*.t")
 
 THIRDPARTY_DIR := $(shell pwd)/thirdparty
 
-EXTRA_DIST = VERSION PERL_MODULES COPYRIGHT LICENSE CHANGES AUTHORS bootstrap $(BIN) $(PERLTESTS)
+EXTRA_DIST = VERSION PERL_MODULES COPYRIGHT LICENSE CHANGES AUTHORS bootstrap $(BIN) $(PERLTESTS) $(PUB) $(TEMPLATES)
 
 YEAR := $(shell date +%Y)
 DATE := $(shell date +%Y-%m-%d)
 
 datadir = $(prefix)
+nobase_data_DATA = $(PUBLIC) $(TEMPLATES)
 
 README COPYRIGHT : VERSION
 	$(PERL) -i -p -e 's/(#VERSION#|\d+\.\d+.\d+\S+)/$(PACKAGE_VERSION)/g;s/(#YEAR#|20[1-4]\d)/$(YEAR)/g;s/(#DATE#|20[1-9]\d-[01]\d-[0-3]\d)/$(DATE)/g;' $@

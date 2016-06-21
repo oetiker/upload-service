@@ -90,6 +90,9 @@ sub startup {
 
     }
     if ($ENV{US_TAGMODE}){        # / (upload page)
+        if ($ENV{US_SINGLEUSER}){
+            $r->get('/' => 'home');
+        }
         $b = $b->under('/:tag' => sub {
             my $self = shift;
             if (not $self->param('tag') =~ /^([a-z0-9]+)$/){
@@ -99,7 +102,6 @@ sub startup {
             }
             my $tag = $1;
             $self->stash('tag'=>$tag);
-            $self->stash(root=>$ENV{US_ROOT});
             $self->render_later;
         });
     }
