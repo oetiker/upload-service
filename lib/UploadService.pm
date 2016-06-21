@@ -184,7 +184,7 @@ sub startup {
                 return if not -e $chunk;
                 push @rm, $chunk;
             }
-            $tag = $self->stash('tag') ? $self->stash('tag').'-' : '';
+            my $tag = $self->stash('tag') ? $self->stash('tag').'-' : '';
             rename $file,$root.'/'.$tag.strftime('%Y-%m-%d_%H-%M-%S_',localtime(time)).$self->param('resumableFilename');
             unlink @rm;
         };
