@@ -6,11 +6,13 @@ use Mojo::Util qw(hmac_sha1_sum b64_encode slurp);
 use POSIX qw(strftime);
 use Fcntl 'SEEK_SET';
 
+our $VERSION = '0.0.0';
+
 sub startup {
     my $self = shift;
     my $me = $self;
 
-    # properly figure your own path when running under fastcgi    
+    # properly figure your own path when running under fastcgi
     $self->hook( before_dispatch => sub {
         my $self = shift;
         my $reqEnv = $self->req->env;
@@ -59,7 +61,7 @@ sub startup {
             my $root = $root_dir . '/'. $username . '/INBOX';
 
             $self->stash(root=>$root);
-    
+
             my $uid = getpwnam($username);
             if (not $uid){
                 $self->res->code(403);
@@ -77,7 +79,7 @@ sub startup {
                     return;
                 }
             }
-            
+
             if ( -l $root or not -w $root or not -d $root ) {
                 $self->res->code(403);
                 $self->render( text => 'no INBOX directory in sandbox');
@@ -86,6 +88,20 @@ sub startup {
             $self->render_later;
         });
 
+    }
+    if ($ENV{US_TAGMODE}){        # / (upload page)
+        $b = $b->under('/:tag' => sub {
+            my $self = shift;
+            if (not $self->param('tag') =~ /^([a-z0-9]+)$/){
+               $self->res->code(403);
+               $self->render( text => 'tags must consist of 0-9 and a-z');
+               return;
+            }
+            my $tag = $1;
+            $self->stash('tag'=>$tag);
+            $self->stash(root=>$ENV{US_ROOT});
+            $self->render_later;
+        });
     }
     $a = $b->under(sub {
         my $self = shift;
@@ -105,7 +121,7 @@ sub startup {
 
     # / (upload page)
     $a->get('/' => sub {
-        my $self = shift;                
+        my $self = shift;
         if ($self->req->url ne '' and $self->req->url !~ m{/$}){
             $self->redirect_to($self->req->url.'/');
         }
@@ -119,7 +135,7 @@ sub startup {
         my $self = shift;
         my $root = $self->stash('root');
         my $sessionkey = $self->stash('skey');
-        my $name = '.'.$sessionkey.'-'.cleanName($self->param('resumableIdentifier'));  
+        my $name = '.'.$sessionkey.'-'.cleanName($self->param('resumableIdentifier'));
         my $chunkNr = int($self->param('resumableChunkNumber'));
         if (-e $root.'/'.$name.'.'.$chunkNr){
             $self->render(text=>'chunk ok',status=>200);
@@ -134,7 +150,7 @@ sub startup {
         my $self    = shift;
         my $sessionkey = $self->stash('skey');
         my $root = $self->stash('root');
-        my $name = '.'.$sessionkey.'-'.cleanName($self->param('resumableIdentifier'));  
+        my $name = '.'.$sessionkey.'-'.cleanName($self->param('resumableIdentifier'));
         my $chunkNr = int($self->param('resumableChunkNumber'));
         my $chunkSize = int($self->param('resumableChunkSize'));
         my $chunkTotal = int($self->param('resumableTotalChunks'));
@@ -145,7 +161,7 @@ sub startup {
             $self->render(status=>206,text=>'upload size was not as expected');
             return;
         }
-        
+
         eval {
             use autodie;
             local $SIG{__DIE__};
@@ -167,8 +183,9 @@ sub startup {
                 my $chunk = $root.'/'.$name.'.'.$_;
                 return if not -e $chunk;
                 push @rm, $chunk;
-                }
-            rename $file,$root.'/'.strftime('%Y-%m-%d_%H-%M-%S_',localtime(time)).$self->param('resumableFilename');
+            }
+            $tag = $self->stash('tag') ? $self->stash('tag').'-' : '';
+            rename $file,$root.'/'.$tag.strftime('%Y-%m-%d_%H-%M-%S_',localtime(time)).$self->param('resumableFilename');
             unlink @rm;
         };
 
@@ -183,7 +200,7 @@ sub startup {
 
 sub cleanName {
     my $name = shift;
-    $name =~ s/[^-_a-z0-9]+/_/g;
+    $name =~ s/[^-_a-z0-9]+/_/ig;
     return $name;
 }
 

@@ -50,6 +50,17 @@ In multi-user mode you get
 In multi user mode, the MOJO_TMPDIR must point to an empty directory
 with mode 0777.
 
+If you want to hand out 'individual' upload urls, you can enable tag mode
+
+ US_TAGMODE=1
+
+In tag mode, the upload url will look like this:
+
+ http://your-site/script-url/TAG
+
+the tag must be made up from [0-9a-z]+
+
+Once the upload is complete the name of the uploaded file(s) will start with the given tag.
+
 Enjoy!
 tobi
-

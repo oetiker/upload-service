@@ -1,29 +1,44 @@
-# Copyright (C) 2013 Tobias Oetiker
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+#  Copyright (C) 2016 Tobias Oetiker
 
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS =  foreign
 
-SUBDIRS = backend
+SUBDIRS = thirdparty lib
 
-EXTRA_DIST = COPYRIGHT LICENSE CHANGES AUTHORS setup/build-thirdparty.sh setup/sdbs.inc
+BIN = bin/$(SCRIPT_NAME) bin/run.sh
+
+PERLTESTS := $(shell test -d t && find t -name "*.t")
+
+THIRDPARTY_DIR := $(shell pwd)/thirdparty
+
+EXTRA_DIST = VERSION PERL_MODULES COPYRIGHT LICENSE CHANGES AUTHORS bootstrap $(BIN) $(PERLTESTS)
 
 YEAR := $(shell date +%Y)
 DATE := $(shell date +%Y-%m-%d)
 
-dist-hook:
-	$(PERL) -i -p -e 's/#VERSION#/$(PACKAGE_VERSION)/g;s/#YEAR#/$(YEAR)/g;s/#DATE#/$(DATE)/g;'  $(distdir)/README $(distdir)/COPYRIGHT
+datadir = $(prefix)
 
-#END
+README COPYRIGHT : VERSION
+	$(PERL) -i -p -e 's/(#VERSION#|\d+\.\d+.\d+\S+)/$(PACKAGE_VERSION)/g;s/(#YEAR#|20[1-4]\d)/$(YEAR)/g;s/(#DATE#|20[1-9]\d-[01]\d-[0-3]\d)/$(DATE)/g;' $@
+
+dist_bin_SCRIPTS = $(BIN)
+
+dist-hook: thirdparty/CPAN/touch
+	$(PERL) -i -p -e 's/^our\s+\$$VERSION\s*=\s*".+?";/our \$$VERSION = "$(PACKAGE_VERSION)";/;'  $(distdir)/lib/$(CLASS_NAME).pm
+
+install-exec-hook:
+	[ "$(PERL5LIB)" == "" ] || cd "$(DESTDIR)$(exec_prefix)" && $(PERL) -i -p -e 's{.*# PERL5LIB}{use lib qw($(PERL5LIB)); # PERL5LIB}' $(BIN) || true
+	cd "$(DESTDIR)$(exec_prefix)" && $(PERL) -i -p -e 's{.*# LIBDIR}{use lib qw($(libdir)); # LIBDIR}' $(BIN)
+	cd "$(DESTDIR)$(exec_prefix)" && $(PERL) -i -p -e 's{^#!.*perl.*}{#!$(PERL)};' $(BIN)
+	[ ! -d $(THIRDPARTY_DIR)/lib/perl5 ] || cp -fr $(THIRDPARTY_DIR)/lib/perl5/* $(DESTDIR)$(libdir)
+
+test:
+	$(PERL) "-MExtUtils::Command::MM" "-e" "test_harness(0, 'lib','thirdparty/lib/perl5')" t/*.t
+
+release:
+	./bootstrap
+	git commit -m 'prep release $(VERSION)' -a
+	git tag v$(PACKAGE_VERSION)
+	git push
+	git push --tags
+	$(MAKE) dist
+	scp $(PACKAGE)-$(PACKAGE_VERSION).tar.gz oepdown@james:public_html/hin
