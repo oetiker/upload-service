@@ -13,7 +13,7 @@ PERLTESTS := $(shell test -d t && find t -name "*.t")
 
 THIRDPARTY_DIR := $(shell pwd)/thirdparty
 
-EXTRA_DIST = VERSION PERL_MODULES COPYRIGHT LICENSE CHANGES AUTHORS bootstrap $(BIN) $(PERLTESTS) $(PUB) $(TEMPLATES)
+EXTRA_DIST = VERSION PERL_MODULES COPYRIGHT LICENSE CHANGES AUTHORS bootstrap $(BIN) $(PERLTESTS) $(PUBLIC) $(TEMPLATES)
 
 YEAR := $(shell date +%Y)
 DATE := $(shell date +%Y-%m-%d)
