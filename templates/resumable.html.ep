@@ -14,10 +14,15 @@
 
 <script>
 jQuery(function(){
+    var email;
     var r = new Resumable({
        target: 'upload',
        permanentErrors: [404, 415, 501]
+% if ($emailMode){
+       ,query: function(){ return { email: email } }
+% }
     });
+
     jQuery('.browser-issue').hide();
     if(!r.support) {
        jQuery('.browser-issue').show();
@@ -25,23 +30,36 @@ jQuery(function(){
        return;
     }
 
-        jQuery('#startBtn').click(function(){
-             r.files.forEach(function(file){
-                file.$progressBar
-                   .removeClass('progress-bar-success')
-                   .text('Waiting my turn ...')
-             });
-             r.upload();
-        });
-        jQuery('#pauseBtn').click(function(){
-             r.pause();
-        });
-        jQuery('#cancelBtn').click(function(){
-             r.files.forEach(function(file){
-                file.$row.remove();
-             });
-             r.cancel();
-       });
+    jQuery('#startBtn').click(function(){
+         r.files.forEach(function(file){
+            file.$progressBar
+               .removeClass('progress-bar-success')
+               .text('Waiting my turn ...')
+         });
+         r.upload();
+    });
+
+    jQuery('#pauseBtn').click(function(){
+         r.pause();
+    });
+
+    jQuery('#cancelBtn').click(function(){
+         r.files.forEach(function(file){
+            file.$row.remove();
+         });
+         r.cancel();
+    });
+
+% if ($emailMode){
+    var $actionBtns = jQuery('#action-buttons');
+    jQuery('#email').on('keyup',function(){
+        email = jQuery(this).val();
+        var emailOk = email.match(/^[^\s@]+@[^\s@\.]+\.[^\s@]+$/) ? true : false;
+        $actionBtns.prop('disabled',!emailOk);
+        console.log(email,emailOk);
+    });
+    $actionBtns.prop('disabled',true);
+% }
 
      r.assignBrowse(document.getElementById('browseBtn'));
 
@@ -234,6 +252,23 @@ jQuery(function(){
   <p><a class="btn btn-primary btn-lg" role="button" href="https://chrome.google.com">Get a copy of Google Chrome</a></p>
 </div>
 
+% if ($emailMode){
+
+<div class="row">
+  <div class="col-sm-4">
+    <div id="email-form" class="form-group has-feedback">
+       <label for="email" class="control-label" >Email address</label>
+       <input type="email" class="form-control" id="email" placeholder="Enter your email address to enable upload">
+       <span id="email-status" class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    </div>
+  </div>
+</div>
+
+<br/>
+
+% }
+<fieldset id="action-buttons">
+
 <div class="row action-buttons">
   <div class="col-xs-12">
     <span id="dropTarget" class="btn btn-primary btn-file btn-lg">
@@ -263,5 +298,8 @@ jQuery(function(){
 <br/>
 <div class="container" id="fileList">
 </div>
+
+</fieldset>
+
 </body>
 </html>

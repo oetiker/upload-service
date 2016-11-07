@@ -39,6 +39,11 @@ in multi user mode the url for upload is expected to contain the $USERNAME
 and the script must run as root (use sudo) so that it can suid to the
 recipient of the files.
 
+Ask the user to provide en email address, and store the uploads in
+a subdirectory with the email address name.
+
+  US_EMAILMODE=0|1
+
 In single user mode you get
 
  http://your-site/script-url/

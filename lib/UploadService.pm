@@ -128,6 +128,7 @@ sub startup {
             $self->redirect_to($self->req->url.'/');
         }
         else {
+            $self->stash(emailMode => $ENV{US_EMAILMODE} ? 1 : 0);
             $self->render(template=>'resumable');
         }
     });
@@ -163,7 +164,6 @@ sub startup {
             $self->render(status=>206,text=>'upload size was not as expected');
             return;
         }
-
         eval {
             use autodie;
             local $SIG{__DIE__};
@@ -187,7 +187,14 @@ sub startup {
                 push @rm, $chunk;
             }
             my $tag = $self->stash('tag') ? $self->stash('tag').'-' : '';
-            rename $file,$root.'/'.$tag.strftime('%Y-%m-%d_%H-%M-%S_',localtime(time)).$self->param('resumableFilename');
+            my $fileName = cleanName($self->param('resumableFilename'));
+            my $emailDir = '';
+            if ($ENV{US_EMAILMODE}){
+                $emailDir = cleanName($self->param('email'));
+                -d $root.'/'.$emailDir || mkdir $root.'/'.$emailDir;
+                $emailDir .= '/';
+            }
+            rename $file,$root.'/'.$emailDir.$tag.strftime('%Y-%m-%d_%H-%M-%S_',localtime(time)).$fileName;
             unlink @rm;
         };
 
@@ -202,7 +209,7 @@ sub startup {
 
 sub cleanName {
     my $name = shift;
-    $name =~ s/[^-_a-z0-9]+/_/ig;
+    $name =~ s/[^-_a-z0-9@.]+/_/ig;
     return $name;
 }
 
