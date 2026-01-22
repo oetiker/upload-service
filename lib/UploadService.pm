@@ -2,7 +2,8 @@ package UploadService;
 use Mojo::Base 'Mojolicious';
 use Mojo::Asset::File;
 use Data::Dumper;
-use Mojo::Util qw(hmac_sha1_sum b64_encode slurp);
+use Mojo::Util qw(hmac_sha1_sum b64_encode);
+use Mojo::File qw(path);
 use POSIX qw(strftime);
 use Fcntl 'SEEK_SET';
 
@@ -23,7 +24,7 @@ sub startup {
     });
 
     # session is valid for 1 day
-    $self->secret(slurp($ENV{US_SECRET_FILE})) if $ENV{US_SECRET_FILE} and -r $ENV{US_SECRET_FILE};
+    $self->secrets([path($ENV{US_SECRET_FILE})->slurp]) if $ENV{US_SECRET_FILE} and -r $ENV{US_SECRET_FILE};
     $self->sessions->cookie_name('uploader');
     $self->sessions->default_expiration(1*24*3600);
 
@@ -136,9 +137,14 @@ sub startup {
     # GET /upload (retrieves stored file list)
     $a->get('/upload' => sub {
         my $self = shift;
+        my $identifier = validateFilename($self->param('resumableIdentifier'));
+        if (!defined $identifier) {
+            $self->render(text=>'invalid file identifier', status=>400);
+            return;
+        }
         my $root = $self->stash('root');
         my $sessionkey = $self->stash('skey');
-        my $name = '.'.$sessionkey.'-'.cleanName($self->param('resumableIdentifier'));
+        my $name = '.'.$sessionkey.'-'.$identifier;
         my $chunkNr = int($self->param('resumableChunkNumber'));
         if (-e $root.'/'.$name.'.'.$chunkNr){
             $self->render(text=>'chunk ok',status=>200);
@@ -151,9 +157,19 @@ sub startup {
     # POST /upload (push one or more files to app)
     $a->post('/upload' => sub {
         my $self    = shift;
+        my $identifier = validateFilename($self->param('resumableIdentifier'));
+        if (!defined $identifier) {
+            $self->render(text=>'invalid file identifier', status=>400);
+            return;
+        }
+        my $fileName = validateFilename($self->param('resumableFilename'));
+        if (!defined $fileName) {
+            $self->render(text=>'invalid filename', status=>400);
+            return;
+        }
         my $sessionkey = $self->stash('skey');
         my $root = $self->stash('root');
-        my $name = '.'.$sessionkey.'-'.cleanName($self->param('resumableIdentifier'));
+        my $name = '.'.$sessionkey.'-'.$identifier;
         my $chunkNr = int($self->param('resumableChunkNumber'));
         my $chunkSize = int($self->param('resumableChunkSize'));
         my $chunkTotal = int($self->param('resumableTotalChunks'));
@@ -187,10 +203,18 @@ sub startup {
                 push @rm, $chunk;
             }
             my $tag = $self->stash('tag') ? $self->stash('tag').'-' : '';
-            my $fileName = cleanName($self->param('resumableFilename'));
             my $emailDir = '';
             if ($ENV{US_EMAILMODE}){
-                $emailDir = cleanName($self->param('email'));
+                my $email = $self->param('email');
+                if (!defined $email || $email =~ /^\./ || $email =~ /\.\./) {
+                    $self->render(text=>'invalid email', status=>400);
+                    return;
+                }
+                $emailDir = cleanName($email);
+                if (length($emailDir) == 0 || length($emailDir) > 200) {
+                    $self->render(text=>'invalid email', status=>400);
+                    return;
+                }
                 -d $root.'/'.$emailDir || mkdir $root.'/'.$emailDir;
                 $emailDir .= '/';
             }
@@ -205,6 +229,16 @@ sub startup {
             die $@;
         }
     });
+}
+
+sub validateFilename {
+    my $name = shift;
+    return if !defined $name || length($name) == 0;
+    return if length($name) > 200;
+    return if $name =~ /^\./;        # no hidden files (leading dot)
+    return if $name =~ /\.\./;       # no path traversal
+    return $name if $name =~ /^[a-zA-Z0-9_. -]+$/;  # whitelist only
+    return;  # invalid
 }
 
 sub cleanName {
