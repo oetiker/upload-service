@@ -1,0 +1,31 @@
+# Example systemd unit for the upload service in single user tag mode.
+#
+# Install the release with ./configure --prefix=/home/inbox/upload-service-X.Y.Z
+# && make install, point the symlink /home/inbox/current at it, copy this file
+# to /etc/systemd/system/upload.service and adjust user, paths and the TLS
+# certificate. Create the session secret once:
+#   umask 077; head -c 48 /dev/urandom | base64 -w0 > /home/inbox/upload-service-secret
+
+[Unit]
+Description=Upload Service
+After=network.target
+
+[Service]
+Type=simple
+User=inbox
+Group=inbox
+WorkingDirectory=/home/inbox
+Restart=always
+Environment="US_ROOT=/home/inbox/INBOX"
+Environment="US_SINGLEUSER=1"
+Environment="US_TAGMODE=1"
+Environment="US_SECRET_FILE=/home/inbox/upload-service-secret"
+Environment="MOJO_TMPDIR=/home/inbox/INBOX"
+Environment="MOJO_MODE=production"
+# The key is copied as root so the service user can read it.
+PermissionsStartOnly=true
+ExecStartPre=/bin/install -m 0600 -o inbox -g inbox /etc/ssl/private/upload.example.com.key /home/inbox/tls.key
+ExecStart=/home/inbox/current/bin/us.pl prefork --listen=https://*:8443?cert=/etc/ssl/certs/upload.example.com.crt&key=/home/inbox/tls.key
+
+[Install]
+WantedBy=multi-user.target
