@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= lang %>">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Upload Service</title>
+    <title><%= l 'title' %></title>
     <script src="<%= $ENV{US_SINGLEUSER} ? '' : '../' %><%= $ENV{US_TAGMODE} ? '../' : '' %>js/resumable.js"></script>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
@@ -14,10 +14,12 @@
 
 <script>
 jQuery(function(){
+    var T = <%== Mojo::JSON::to_json({ map { $_ => l($_) } qw(waiting chunking ready file_done all_done progress) }) %>;
     var email;
     var r = new Resumable({
        target: 'upload',
-       permanentErrors: [404, 415, 501]
+       permanentErrors: [400, 403, 404, 415, 501],
+       chunkRetryInterval: 5000
 % if ($emailMode){
        ,query: function(){ return { email: email } }
 % }
@@ -34,7 +36,7 @@ jQuery(function(){
          r.files.forEach(function(file){
             file.$progressBar
                .removeClass('progress-bar-success')
-               .text('Waiting my turn ...')
+               .text(T.waiting)
          });
          r.upload();
     });
@@ -96,7 +98,7 @@ jQuery(function(){
 
         var $progressCol = jQuery('<div class="col-sm-8">');
         var $progress = jQuery('<div class="progress"/>');
-        var $progressBar = jQuery('<div class="progress-bar progress-bar-warning"  role="progressbar">Chunking File. Please Wait</div>');
+        var $progressBar = jQuery('<div class="progress-bar progress-bar-warning"  role="progressbar">' + T.chunking + '</div>');
         file.$progressBar = $progressBar;
         file.$btnGroup = $btnGroup;
 
@@ -123,7 +125,7 @@ jQuery(function(){
          file.$progressBar
              .removeClass('progress-bar-warning')
              .addClass('progress-bar-success')
-             .text('Ready to Upload, Press Start!')
+             .text(T.ready)
              .css({ width: '100%' });
      });
 
@@ -146,7 +148,7 @@ jQuery(function(){
         file.$progressBar
         .addClass('progress-bar-success')
         .css({ width: '100%' })
-        .text('Upload Complete');
+        .text(T.file_done);
         r.removeFile(file);
         file.$btnGroup.hide();
         filesComplete += file.size;
@@ -155,7 +157,7 @@ jQuery(function(){
 
      r.on('complete',function(){
         $masterProgressBar
-           .text('Uploads Complete!')
+           .text(T.all_done)
            .addClass('progress-bar-success')
            .css({width: '100%'})
      });
@@ -195,10 +197,10 @@ jQuery(function(){
         }
         speed = Math.round ( currentSize / (currentTime - startTime) / 1024 / 1024 *100 )/100;
 
-        $masterStatus.text(
-           speed + ' MByte/s - '
-           + Math.round(currentSize / 1024 / 1024) + ' MByte of '
-           + Math.round(totalSize / 1024 / 1024) + ' MByte'
+        $masterStatus.text(T.progress
+           .replace('%1$s', speed)
+           .replace('%2$s', Math.round(currentSize / 1024 / 1024))
+           .replace('%3$s', Math.round(totalSize / 1024 / 1024))
         );
      });
   });
@@ -229,6 +231,13 @@ jQuery(function(){
     display: block;
 }
 
+.us-version {
+    position: fixed;
+    right: 8px;
+    bottom: 4px;
+    font-size: 11px;
+    color: #999;
+}
 </style>
 </head>
 <body>
@@ -237,19 +246,16 @@ jQuery(function(){
 
 <div class="row">
   <div class="col-xs-12">
-    <h1 class="text-center"><%=  [ split /,/, [ getpwnam( stash('user') ) ]->[6] ]->[0] %>'s INBOX</h1>
+% my $recipient = recipient;
+    <h1 class="text-center"><%= defined $recipient ? l('heading_for', $recipient) : l('heading') %></h1>
   </div>
 </div>
 
 <br/>
 
 <div class="jumbotron browser-issue">
-<h1>Upload does not work with your Browser!</h1>
-  <p>It seems you are using a rather old browser version. The upload service uses the HTML5 File API. This API is implemented by
-  all modern browser versions (IE 10+, Firefox 4+, Chrome 21+, Opera 12+, Safari 6+).
-  The easiest way to get this working may be to get a copy of Google Chrome. Installing Chrome does not even require administrator privileges in many cases. Use the button below surf to googles download page.</p>
-  <br/>
-  <p><a class="btn btn-primary btn-lg" role="button" href="https://chrome.google.com">Get a copy of Google Chrome</a></p>
+<h1><%= l 'old_browser' %></h1>
+  <p><%= l 'old_browser_text' %></p>
 </div>
 
 % if ($emailMode){
@@ -257,8 +263,8 @@ jQuery(function(){
 <div class="row">
   <div class="col-sm-4">
     <div id="email-form" class="form-group has-feedback">
-       <label for="email" class="control-label" >Email address</label>
-       <input type="email" class="form-control" id="email" placeholder="Enter your email address to enable upload">
+       <label for="email" class="control-label" ><%= l 'email_label' %></label>
+       <input type="email" class="form-control" id="email" placeholder="<%= l 'email_hint' %>">
        <span id="email-status" class="glyphicon form-control-feedback" aria-hidden="true"></span>
     </div>
   </div>
@@ -272,11 +278,11 @@ jQuery(function(){
 <div class="row action-buttons">
   <div class="col-xs-12">
     <span id="dropTarget" class="btn btn-primary btn-file btn-lg">
-      <span class="glyphicon glyphicon-ok-sign"></span> Select Files <input id="browseBtn" type="file">
+      <span class="glyphicon glyphicon-ok-sign"></span> <%= l 'select_files' %> <input id="browseBtn" type="file">
     </span>
-    <button id="startBtn" type="button" class="btn btn-success btn-lg"><span class="glyphicon glyphicon-upload"></span> Start Upload</button>
-    <button id="pauseBtn" type="button" class="btn btn-warning btn-lg"><span class="glyphicon glyphicon-pause"></span> Pause</button>
-    <button id="cancelBtn" type="button" class="btn btn-danger btn-lg"><span class="glyphicon glyphicon-ban-circle"></span> Cancel</button>
+    <button id="startBtn" type="button" class="btn btn-success btn-lg"><span class="glyphicon glyphicon-upload"></span> <%= l 'start' %></button>
+    <button id="pauseBtn" type="button" class="btn btn-warning btn-lg"><span class="glyphicon glyphicon-pause"></span> <%= l 'pause' %></button>
+    <button id="cancelBtn" type="button" class="btn btn-danger btn-lg"><span class="glyphicon glyphicon-ban-circle"></span> <%= l 'cancel' %></button>
   </div>
 </div>
 
@@ -300,6 +306,8 @@ jQuery(function(){
 </div>
 
 </fieldset>
+
+<div class="us-version">upload-service <%= $UploadService::VERSION %></div>
 
 </body>
 </html>
