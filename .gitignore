@@ -21,3 +21,15 @@ aclocal.m4
 autom4te.cache/
 config.log
 config.status
+thirdparty/CPAN/
+thirdparty/Ore/
+thirdparty/bin/
+thirdparty/lib/
+thirdparty/man/
+thirdparty/sources/
+thirdparty/work/
+thirdparty/build.log
+thirdparty/latest-build
+thirdparty/touch
+lib/Makefile
+upload-service-*.tar.gz
