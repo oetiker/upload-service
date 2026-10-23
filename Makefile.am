@@ -22,7 +22,7 @@ datadir = $(prefix)
 nobase_data_DATA = $(PUBLIC) $(TEMPLATES)
 
 README COPYRIGHT : VERSION
-	$(PERL) -i -p -e 's/(#VERSION#|\d+\.\d+.\d+\S+)/$(PACKAGE_VERSION)/g;s/(#YEAR#|20[1-4]\d)/$(YEAR)/g;s/(#DATE#|20[1-9]\d-[01]\d-[0-3]\d)/$(DATE)/g;' $@
+	$(PERL) -i -p -e 's/(#VERSION#|\d+\.\d+.\d+\S+)/$(PACKAGE_VERSION)/g;s/#YEAR#/$(YEAR)/g;s/(20[1-4]\d-)20[1-4]\d/$${1}$(YEAR)/g;s/(#DATE#|20[1-9]\d-[01]\d-[0-3]\d)/$(DATE)/g;' $@
 
 dist_bin_SCRIPTS = $(BIN)
 
